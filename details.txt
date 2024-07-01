@@ -1,0 +1,98 @@
+Name :
+DOB : Time : Day : Age : Place :
+Colour : Height :
+Education :
+Job :  sector : company : Designation : location : income :
+
+Kothram:
+Tamil year : Month : Date :
+
+nakshatram : patham : Rasi :  Lagnam : 
+dhosam : 
+
+family :
+    Father's name :  Job:
+    Mother's name :  Job:
+    Family income:
+    Native / origin :
+    kuladeviam :
+    city :
+    Sibblings :
+     elder
+     younger
+    Mobile no :
+    Current Address :
+
+
+Mesham, 
+Risabham,
+Mithunam,
+Kadagam,
+Simmam,
+Kanni,
+Thulam,
+Viruchigam,
+Dhanushu,
+Magaram,
+Kumbham,
+Meenam
+
+
+
+
+
+Ashwini, 
+Bharani,
+Krittikai, 
+Rohini, 
+Mrigashiram, 
+Ardra, 
+Punarvasu, 
+Pushya, 
+Ashlesha, 
+Magha, 
+PurvaPhalguni, 
+UttaraPhalguni, 
+Hasta, 
+Chitra, 
+Swati, 
+Vishakha, 
+Anuradha, 
+Jyestha, 
+Moola/Mula, 
+Poorvashada, 
+Uttarashada, 
+Abhijit, 
+Dhanishta, 
+Shatabhisha, 
+Purva Bhadrapada, 
+Uttara Bhadrapada, 
+Revati,
+Shravana 
+
+
+
+
+Kalayukti,
+Siddharthi,
+Raudri,
+Durmati,
+Dundubhi,
+Rudhirodgari,
+Rakshasa,
+Ananda,
+Raktaakshi,
+Khara,
+Sarvajit,
+Sarvadhari,
+Virodhi,
+Vikriti,
+Khara,
+Nandana
+
+
+Age,
+Job, 
+location,
+rasi,
+nakshatram,

@@ -1,0 +1,11 @@
+{
+    "url": "/users/login",
+    "method": "POST",
+    "description": "Create a new user",
+    "parameters": [
+       {
+        "email" : "email",
+        "password": "password"
+       }
+    ]
+}
