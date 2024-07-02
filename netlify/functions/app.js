@@ -7,9 +7,15 @@ const connectDB = require("../../DB/db");
 const formidableMiddleware = require('express-formidable');
 const path = require('path');
 const app = express();
+const cors = require('cors');
 
 // const PORT = process.env.PORT;
-
+app.use(cors({
+  origin: 'https://marriagematcher.netlify.app', // Allow only this origin to access the server
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
 app.use(bodyParser.json());
 app.use("/.netlify/functions/app/api/uploads/images", express.static(path.join('uploads', 'images')));
 

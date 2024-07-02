@@ -6,12 +6,13 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon --env-file=.env server.js",
-     "build": "netlify deploy --prod"
+    "build": "netlify deploy --prod"
   },
   "author": "mukilan",
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
     "express": "^4.19.2",
     "express-formidable": "^1.2.0",
     "express-jwt": "^7.7.8",
