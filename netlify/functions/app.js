@@ -12,7 +12,7 @@ const cors = require('cors');
 // const PORT = process.env.PORT;
 app.use(cors({
   origin: 'https://marriagematcher.netlify.app', // Allow only this origin to access the server
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
@@ -20,9 +20,9 @@ app.use(bodyParser.json());
 app.use("/.netlify/functions/app/api/uploads/images", express.static(path.join('uploads', 'images')));
 
 app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Headers", "*");
-  res.setHeader("Access-Control-Allow-Methods", "*");
+  res.setHeader('Access-Control-Allow-Origin', 'https://marriagematcher.netlify.app'); // Replace with your frontend origin
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH'); // Allowed methods (adjust as needed)
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization'); // Allowed headers (adjust as needed)
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
