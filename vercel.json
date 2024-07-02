@@ -1,4 +1,14 @@
 {
 	"version": 2,
-	"rewrites": [{ "source": "/(.*)", "destination": "/api" }]
+	 "builds": [
+    {
+      "src": "server.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "uploads/**",
+      "use": "@vercel/static"
+    }
+  ],
+	"rewrites": [{ "source": "/(.*)", "destination": "/" }]
 }
