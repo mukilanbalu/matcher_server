@@ -1,6 +1,5 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-
 const routes = require("./routes/index");
 const HttpError = require("./models/httpError");
 const connectDB = require("./DB/db")
@@ -8,7 +7,7 @@ const formidableMiddleware = require('express-formidable');
 const path = require('path');
 const app = express();
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5000;
 
 
 
