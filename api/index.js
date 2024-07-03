@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(bodyParser.json());
 // app.use("/api/uploads/images", express.static(path.join('output', 'static', 'uploads', 'images')))
-app.use("/api/uploads/images", express.static(path.join('.output', 'static', 'uploads', 'images')))
+app.use("/api/uploads/images", express.static(path.join(__dirname, 'uploads', 'images')))
 
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
