@@ -19,6 +19,49 @@ function nestFields(data) {
 
     return result;
 }
+
+function createQuery(obj) {
+    const query = { $and: [] };
+
+    for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+            const value = obj[key];
+
+            // Transform gender
+            if (key === "gender") {
+                let genderValue = value;
+                if (value.toLowerCase() === "bride") {
+                    genderValue = "Female";
+                } else if (value.toLowerCase() === "groom") {
+                    genderValue = "Male";
+                }
+                query.$and.push({ gender: genderValue });
+            }
+            // Handle birth.age range
+            else if (key === "birth.age" && Array.isArray(value) && value.length === 2) {
+                query.$and.push({
+                    $expr: {
+                        $and: [
+                            { $gte: [{ $toInt: `$${key}` }, value[0]] },
+                            { $lte: [{ $toInt: `$${key}` }, value[1]] }
+                        ]
+                    }
+                });
+            }
+            // Handle other fields
+            else {
+                query.$and.push({ [key]: value });
+            }
+        }
+    }
+
+    return query;
+}
+function hasMoreKeyValues(payload) {
+    const keys = Object.keys(payload);
+    return keys.length > 1;
+}
+
 const createProfile = async (req, res, next) => {
 
     try {
@@ -38,7 +81,6 @@ const createProfile = async (req, res, next) => {
             profile.astro.img = req.files['astro_img'][0].path;
         }
         // Save the updated profile (if using Mongoose)
-        console.log(profile)
         await user_profiles.create(profile);
         res.status(200).json({ data: { ...profile } });
     }
@@ -63,14 +105,12 @@ const getProfile = async (req, res, next) => {
         }
     }
     res.send()
-
 }
 
 
 
 
 const getProfiles = async (req, res, next) => {
-    // console.log("cal", req)
     // try {
     //     const data = await user_profiles.find({ email: req.query.email })
     //     if (!data.length) {
@@ -82,7 +122,6 @@ const getProfiles = async (req, res, next) => {
     // catch (err) {
     //     return next(err);
     // }
-    console.log(req.body)
     let payload = {};
     if (req.body) {
         payload = req.body.filters
@@ -94,8 +133,10 @@ const getProfiles = async (req, res, next) => {
             data = await user_profiles.find(payload)
 
         } else {
+            if (payload)
+                payload = hasMoreKeyValues(payload) ? createQuery(payload) : payload;
             data = await user_profiles.find(payload)
-                .select('name birth.age professional.education professional.job professional.location email profile_img');
+                .select('name birth.age professional.education astro.rasi astro.nakshatram professional.job professional.location email profile_img');
 
         }
 

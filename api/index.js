@@ -60,7 +60,6 @@ const startServer = async () => {
   const dbConnected = await connectDB();
   if (dbConnected) {
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
     });
   }
 };

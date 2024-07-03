@@ -6,3 +6,4 @@
 # Ignore package-lock.json file
 package-lock.json
 .vercel
+.env
