@@ -157,18 +157,36 @@ const editProfile = async (req, res, next) => {
             return next(httpError);
         }
         // data.profile_img = req.files.map(file => file.path)
-        const profileToUpdate = data[0]; // Assuming you want to update the first matching profile
-
+        // let profileToUpdate = data[0]; // Assuming you want to update the first matching profile
+        const jsonString = JSON.stringify(req.body); // Assuming you want to update the first matching profile
+        const profile = nestFields(JSON.parse(jsonString))
+        profileToUpdate = {
+            ...data[0]._doc,
+            ...profile
+        }
         // Update the profile with new profile_img paths
         if (req.files['profile_img']) {
             profileToUpdate.profile_img = req.files['profile_img'].map(file => file.path);
+        } else {
+            profileToUpdate.profile_img = data[0].profile_img
         }
         if (req.files['astro_img']) {
             profileToUpdate.astro.img = req.files['astro_img'][0].path;
+        } else {
+            profileToUpdate.astro.img = data[0].astro.img
         }
+
+        delete profileToUpdate.__v
+        delete profileToUpdate.astro_img
+        delete profileToUpdate.profile_img
         // Save the updated profile (if using Mongoose)
-        const result = await profileToUpdate.save();
-        res.status(200).json({ result });
+        console.log("new profile", profileToUpdate)
+        const updatedProfile = await user_profiles.findOneAndUpdate(
+            { email: req.body.email },
+            { $set: profileToUpdate },
+            { new: true } // Return the updated document
+        );
+        res.status(200).json({ data: updatedProfile });
     }
     catch (err) {
         return next(err);

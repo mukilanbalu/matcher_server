@@ -28,7 +28,7 @@ const astroSchema = new mongoose.Schema({
     nakshatram: { type: String, required: true },
     patham: { type: String, required: true },
     lagnam: { type: String, required: true },
-    img: { type: String, required: true }
+    img: { type: String }
 })
 
 
@@ -57,7 +57,7 @@ const userSchema = new mongoose.Schema({
     weight: { type: String, required: true },
     colour: { type: String, required: true },
     gender: { type: String, required: true },
-    profile_img: [{ type: String, required: true }],
+    profile_img: [{ type: String }],
     birth: { type: engDObSchema, required: true },
     professional: { type: professionalSchema, required: true },
     astro: { type: astroSchema, required: true },
