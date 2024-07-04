@@ -59,7 +59,7 @@ function createQuery(obj) {
 }
 function hasMoreKeyValues(payload) {
     const keys = Object.keys(payload);
-    return keys.length > 1;
+    return keys.length === 1 && keys[0] === "email";
 }
 
 const createProfile = async (req, res, next) => {
@@ -109,7 +109,6 @@ const getProfile = async (req, res, next) => {
 
 
 
-
 const getProfiles = async (req, res, next) => {
     // try {
     //     const data = await user_profiles.find({ email: req.query.email })
@@ -134,10 +133,9 @@ const getProfiles = async (req, res, next) => {
 
         } else {
             if (payload)
-                payload = hasMoreKeyValues(payload) ? createQuery(payload) : payload;
+                payload = hasMoreKeyValues(payload) ? payload : createQuery(payload);
             data = await user_profiles.find(payload)
                 .select('name birth.age professional.education astro.rasi astro.nakshatram professional.job professional.location email profile_img');
-
         }
 
         if (!data.length) {
