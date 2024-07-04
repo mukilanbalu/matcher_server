@@ -167,7 +167,7 @@ const editProfile = async (req, res, next) => {
             profileToUpdate.astro.img = req.files['astro_img'][0].path;
         }
         // Save the updated profile (if using Mongoose)
-        // await profileToUpdate.save();
+        await profileToUpdate.save();
         res.status(200).json({ profileToUpdate });
     }
     catch (err) {
