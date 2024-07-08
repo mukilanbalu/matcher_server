@@ -1,5 +1,6 @@
 const HttpError = require("../models/httpError");
 const user_profiles = require("../models/profileModel");
+const getDateNDaysAgo = require("../utils")
 
 
 function nestFields(data) {
@@ -21,10 +22,12 @@ function nestFields(data) {
 }
 
 function createQuery(obj) {
-    const query = { $and: [] };
+    const query = {
+        $and: [],
+    };
 
     for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
+        if (obj.hasOwnProperty(key) && key !== "limit" && key !== "skip") {
             const value = obj[key];
 
             // Transform gender
@@ -39,14 +42,83 @@ function createQuery(obj) {
             }
             // Handle birth.age range
             else if (key === "birth.age" && Array.isArray(value) && value.length === 2) {
+                const today = new Date();
+                const minAgeDate = new Date(today.getFullYear() - value[1], today.getMonth(), today.getDate());
+                const maxAgeDate = new Date(today.getFullYear() - value[0], today.getMonth(), today.getDate());
+
+                // Convert dates to ISO string for comparison
+                const minDateStr = minAgeDate.toISOString().split('T')[0];
+                const maxDateStr = maxAgeDate.toISOString().split('T')[0];
+
+                // Add a query to compare DOB strings directly
                 query.$and.push({
                     $expr: {
                         $and: [
-                            { $gte: [{ $toInt: `$${key}` }, value[0]] },
-                            { $lte: [{ $toInt: `$${key}` }, value[1]] }
+                            {
+                                $gte: [
+                                    {
+                                        $dateFromString: {
+                                            dateString: {
+                                                $concat: [
+                                                    { $substr: ["$birth.dob", 6, 4] },
+                                                    "-",
+                                                    { $substr: ["$birth.dob", 3, 2] },
+                                                    "-",
+                                                    { $substr: ["$birth.dob", 0, 2] }
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    { $dateFromString: { dateString: minDateStr } }
+                                ]
+                            },
+                            {
+                                $lte: [
+                                    {
+                                        $dateFromString: {
+                                            dateString: {
+                                                $concat: [
+                                                    { $substr: ["$birth.dob", 6, 4] },
+                                                    "-",
+                                                    { $substr: ["$birth.dob", 3, 2] },
+                                                    "-",
+                                                    { $substr: ["$birth.dob", 0, 2] }
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    { $dateFromString: { dateString: maxDateStr } }
+                                ]
+                            }
                         ]
                     }
                 });
+            }
+            else if (key === "created_on") {
+                if (value !== "All") {
+                    let dates = getDateNDaysAgo(parseInt(value));
+
+                    // Add a query to compare created_on strings directly
+                    query.$and.push({
+                        $expr: {
+                            $gte: [
+                                {
+                                    $dateFromString: {
+                                        dateString: "$created_on",
+                                        format: "%d/%m/%Y"
+                                    }
+                                },
+                                {
+                                    $dateFromString: {
+                                        dateString: dates,
+                                        format: "%d/%m/%Y"
+                                    }
+                                }
+                            ]
+                        }
+                    });
+                }
+
             }
             // Handle other fields
             else {
@@ -54,7 +126,6 @@ function createQuery(obj) {
             }
         }
     }
-
     return query;
 }
 function hasMoreKeyValues(payload) {
@@ -110,18 +181,8 @@ const getProfile = async (req, res, next) => {
 
 
 const getProfiles = async (req, res, next) => {
-    // try {
-    //     const data = await user_profiles.find({ email: req.query.email })
-    //     if (!data.length) {
-    //         const httpError = new HttpError("No data found", 401)
-    //         return next(httpError);
-    //     }
-    //     res.status(200).json({ data });
-    // }
-    // catch (err) {
-    //     return next(err);
-    // }
     let payload = {};
+    let totalRec = "";
     if (req.body) {
         payload = req.body.filters
         isFullProfile = req.body.isFullProfile;
@@ -134,15 +195,17 @@ const getProfiles = async (req, res, next) => {
         } else {
             if (payload)
                 payload = hasMoreKeyValues(payload) ? payload : createQuery(payload);
-            data = await user_profiles.find(payload)
-                .select('name birth.age professional.education astro.rasi astro.nakshatram professional.job professional.location email profile_img');
+            data = await user_profiles.find(payload).limit(req.body.filters.limit).skip(req.body.filters.skip)
+                .select('name birth.dob marital_status professional.education astro.rasi astro.nakshatram professional.job professional.location email profile_img');
+
+            totalRec = await user_profiles.countDocuments(payload);
         }
 
         if (!data.length) {
             const httpError = new HttpError("No data found", 204)
             return next(httpError);
         }
-        res.status(200).json({ data })
+        res.status(200).json({ data, totalRec })
 
     } catch (err) {
         return next(err)
@@ -165,28 +228,15 @@ const editProfile = async (req, res, next) => {
             ...profile
         }
         // Update the profile with new profile_img paths
-        if (req.files['profile_img']) {
-            profileToUpdate.profile_img = req.files['profile_img'].map(file => file.path);
-        } else {
-            profileToUpdate.profile_img = data[0].profile_img
-        }
-        if (req.files['astro_img']) {
-            profileToUpdate.astro.img = req.files['astro_img'][0].path;
-        } else {
-            profileToUpdate.astro.img = data[0].astro.img
-        }
 
         delete profileToUpdate.__v
-        delete profileToUpdate.astro_img
-        delete profileToUpdate.profile_img
-        // Save the updated profile (if using Mongoose)
-        console.log("new profile", profileToUpdate)
         const updatedProfile = await user_profiles.findOneAndUpdate(
             { email: req.body.email },
             { $set: profileToUpdate },
             { new: true } // Return the updated document
         );
         res.status(200).json({ data: updatedProfile });
+        res.status(500)
     }
     catch (err) {
         return next(err);
