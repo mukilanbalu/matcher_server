@@ -145,12 +145,12 @@ const createProfile = async (req, res, next) => {
         // }
 
         // Update the profile with new profile_img paths
-        if (req.files['profile_img']) {
-            profile.profile_img = req.files['profile_img'].map(file => file.path);
-        }
-        if (req.files['astro_img']) {
-            profile.astro.img = req.files['astro_img'][0].path;
-        }
+        // if (req.files['profile_img']) {
+        //     profile?.profile_img = req?.files['profile_img'].map(file => file.path);
+        // }
+        // if (req.files['astro_img']) {
+        //     profile.astro.img = req.files['astro_img'][0].path;
+        // }
         // Save the updated profile (if using Mongoose)
         await user_profiles.create(profile);
         res.status(200).json({ data: { ...profile } });

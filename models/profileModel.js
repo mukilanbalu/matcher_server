@@ -26,12 +26,11 @@ const astroSchema = new mongoose.Schema({
     nakshatram: { type: String, required: true },
     patham: { type: String, required: true },
     lagnam: { type: String, required: true },
-    img: { type: String },
-    birth_deasi: { type: String, required: true },
-    current_desai: { type: String, required: true },
+    desai: { type: String, required: true },
     desai_year: { type: String, },
     desai_month: { type: String, },
     desai_date: { type: String, },
+    img: { type: String },
 })
 
 
@@ -58,7 +57,7 @@ const familySchema = new mongoose.Schema({
 const userSchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    martial_status: { type: String, require: true },
+    marital_status: { type: String, require: true },
     height: { type: String, required: true },
     weight: { type: String, required: true },
     colour: { type: String, required: true },
