@@ -15,7 +15,7 @@ const cron = require('node-cron');
 const SERVER_URL = 'https://matcher-server.onrender.com/api';
 
 // Schedule the cron job to run every 14 minutes
-cron.schedule('*/1 * * * *', async () => {
+cron.schedule('*/14 * * * *', async () => {
   try {
     const response = await fetch(SERVER_URL);
     console.log('Server pinged successfully:', response.status);
