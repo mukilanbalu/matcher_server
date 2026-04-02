@@ -2,8 +2,6 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const routes = require("./routes/index");
 const HttpError = require("./models/httpError");
-const connectDB = require("./DB/db")
-const formidableMiddleware = require('express-formidable');
 const path = require('path');
 const app = express();
 const cors = require('cors');
@@ -47,7 +45,6 @@ app.use((req, res, next) => {
 // Middleware to parse form data
 app.use("/api", routes);
 
-app.use(formidableMiddleware());
 
 //Middleware function to handle 404 errors.
 app.use((req, res, next) => {
@@ -73,12 +70,9 @@ app.use(
     res.status(error.code || 500).json({ message: error.message || "Unknown error occurred" });
   })
 const startServer = async () => {
-  const dbConnected = await connectDB();
-  if (dbConnected) {
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  }
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
 };
 
 startServer();

@@ -1,6 +1,5 @@
 const HttpError = require("../models/httpError")
 const axios = require('axios');
-const { param } = require("../routes");
 
 var token = "";
 
@@ -40,12 +39,12 @@ const getPorutham = async (req, res, next) => {
             .then(function (response) {
                 if (response.status === 200) {
                     res.status(200).json(response.data)
+                } else {
+                    res.status(response.status || 500).send()
                 }
-                res.status(error.status).send()
             })
             .catch(function (error) {
-
-                res.status(error.status).send()
+                res.status(error.status || 500).send()
             });
     }
     catch (err) {

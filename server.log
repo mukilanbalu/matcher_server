@@ -1,0 +1,5 @@
+--- Server Start ---
+[2026-04-02T06:55:03.184Z] Checking Supabase connection...
+[2026-04-02T06:55:03.978Z] Supabase connection successful!
+[2026-04-02T06:55:03.981Z] Server running on port 5001
+[2026-04-02T06:56:25.625Z] POST /api/search

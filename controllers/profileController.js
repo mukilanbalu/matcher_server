@@ -1,11 +1,8 @@
 const HttpError = require("../models/httpError");
-const user_profiles = require("../models/profileModel");
-const getDateNDaysAgo = require("../utils")
-
+const supabase = require("../config/supabaseClient");
 
 function nestFields(data) {
     const result = {};
-
     for (const [key, value] of Object.entries(data)) {
         const keys = key.split('.');
         keys.reduce((acc, k, i) => {
@@ -17,245 +14,103 @@ function nestFields(data) {
             return acc[k];
         }, result);
     }
-
     return result;
 }
 
-function createQuery(obj) {
-    const query = {
-        $and: [],
-    };
-
-    for (const key in obj) {
-        if (obj.hasOwnProperty(key) && key !== "limit" && key !== "skip") {
-            const value = obj[key];
-
-            // Transform gender
-            if (key === "gender") {
-                let genderValue = value;
-                if (value.toLowerCase() === "bride") {
-                    genderValue = "Female";
-                } else if (value.toLowerCase() === "groom") {
-                    genderValue = "Male";
-                }
-                query.$and.push({ gender: genderValue });
-            }
-            // Handle birth.age range
-            else if (key === "birth.age" && Array.isArray(value) && value.length === 2) {
-                const today = new Date();
-                const minAgeDate = new Date(today.getFullYear() - value[1], today.getMonth(), today.getDate());
-                const maxAgeDate = new Date(today.getFullYear() - value[0], today.getMonth(), today.getDate());
-
-                // Convert dates to ISO string for comparison
-                const minDateStr = minAgeDate.toISOString().split('T')[0];
-                const maxDateStr = maxAgeDate.toISOString().split('T')[0];
-
-                // Add a query to compare DOB strings directly
-                query.$and.push({
-                    $expr: {
-                        $and: [
-                            {
-                                $gte: [
-                                    {
-                                        $dateFromString: {
-                                            dateString: {
-                                                $concat: [
-                                                    { $substr: ["$birth.dob", 6, 4] },
-                                                    "-",
-                                                    { $substr: ["$birth.dob", 3, 2] },
-                                                    "-",
-                                                    { $substr: ["$birth.dob", 0, 2] }
-                                                ]
-                                            }
-                                        }
-                                    },
-                                    { $dateFromString: { dateString: minDateStr } }
-                                ]
-                            },
-                            {
-                                $lte: [
-                                    {
-                                        $dateFromString: {
-                                            dateString: {
-                                                $concat: [
-                                                    { $substr: ["$birth.dob", 6, 4] },
-                                                    "-",
-                                                    { $substr: ["$birth.dob", 3, 2] },
-                                                    "-",
-                                                    { $substr: ["$birth.dob", 0, 2] }
-                                                ]
-                                            }
-                                        }
-                                    },
-                                    { $dateFromString: { dateString: maxDateStr } }
-                                ]
-                            }
-                        ]
-                    }
-                });
-            }
-            else if (key === "created_on") {
-                if (value !== "All") {
-                    let dates = getDateNDaysAgo(parseInt(value));
-
-                    // Add a query to compare created_on strings directly
-                    query.$and.push({
-                        $expr: {
-                            $gte: [
-                                {
-                                    $dateFromString: {
-                                        dateString: "$created_on",
-                                        format: "%d/%m/%Y"
-                                    }
-                                },
-                                {
-                                    $dateFromString: {
-                                        dateString: dates,
-                                        format: "%d/%m/%Y"
-                                    }
-                                }
-                            ]
-                        }
-                    });
-                }
-
-            }
-            // Handle other fields
-            else {
-                query.$and.push({ [key]: value });
-            }
-        }
-    }
-    return query;
-}
-function hasMoreKeyValues(payload) {
-    const keys = Object.keys(payload);
-    return keys.length === 1 && keys[0] === "email";
-}
-
 const createProfile = async (req, res, next) => {
-
     try {
-        const jsonString = JSON.stringify(req.body); // Assuming you want to update the first matching profile
-        const profile = nestFields(JSON.parse(jsonString))
+        const profile = nestFields(req.body);
+        const { data, error } = await supabase
+            .from('profiles')
+            .insert([{ ...profile, id: req.auth.sub, email: req.auth.email }])
+            .select();
 
-        // if (!profile.length) {
-        //     const httpError = new HttpError("No data found", 204)
-        //     return next(httpError);
-        // }
-
-        // Update the profile with new profile_img paths
-        // if (req.files['profile_img']) {
-        //     profile?.profile_img = req?.files['profile_img'].map(file => file.path);
-        // }
-        // if (req.files['astro_img']) {
-        //     profile.astro.img = req.files['astro_img'][0].path;
-        // }
-        // Save the updated profile (if using Mongoose)
-        await user_profiles.create(profile);
-        res.status(200).json({ data: { ...profile } });
-    }
-    catch (err) {
+        if (error) throw error;
+        res.status(200).json({ data: data[0] });
+    } catch (err) {
         return next(err);
     }
-
 }
 
 const getProfile = async (req, res, next) => {
-    if (req.params.email) {
-        try {
-            const data = await user_profiles.find({});
-            if (!data.length) {
-                const httpError = new HttpError("No data found", 401)
-                return next(httpError);
-            }
-            res.status(200).json({ data })
+    try {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('email', req.params.email)
+            .single();
 
-        } catch (err) {
-            return next(err)
-        }
+        if (error && error.code !== 'PGRST116') throw error;
+        if (!data) return res.status(204).json({ message: 'Profile not found' });
+        res.status(200).json({ data });
+    } catch (err) {
+        return next(err);
     }
-    res.send()
 }
 
-
-
 const getProfiles = async (req, res, next) => {
-    let payload = {};
-    let totalRec = "";
-    if (req.body) {
-        payload = req.body.filters
-        isFullProfile = req.body.isFullProfile;
-    }
     try {
-        let data = []
-        if (isFullProfile) {
-            data = await user_profiles.find(payload)
+        let { filters, isFullProfile } = req.body;
+        let query = supabase.from('profiles').select('*', { count: 'exact' });
 
-        } else {
-            if (payload)
-                payload = hasMoreKeyValues(payload) ? payload : createQuery(payload);
-            data = await user_profiles.find(payload).limit(req.body.filters.limit).skip(req.body.filters.skip)
-                .select('name birth.dob marital_status professional.education astro.rasi astro.nakshatram professional.job professional.location email profile_img');
-
-            totalRec = await user_profiles.countDocuments(payload);
+        if (filters) {
+            if (filters.email) {
+                query = query.eq('email', filters.email);
+            }
+            if (filters.gender) {
+                const genderValue = filters.gender.toLowerCase() === "bride" ? "Female" : (filters.gender.toLowerCase() === "groom" ? "Male" : filters.gender);
+                query = query.eq('gender', genderValue);
+            }
+            if (filters.marital_status) {
+                query = query.eq('marital_status', filters.marital_status);
+            }
+            
+            if (filters.limit) query = query.limit(filters.limit);
+            if (filters.skip) query = query.range(filters.skip, filters.skip + filters.limit - 1);
         }
 
-        if (!data.length) {
-            const httpError = new HttpError("No data found", 204)
-            return next(httpError);
-        }
-        res.status(200).json({ data, totalRec })
+        console.log('Searching profiles with filters:', filters);
+        const { data, error, count } = await query;
+        console.log('Profiles found:', data?.length, 'Total:', count);
 
+        if (error) throw error;
+        if (!data || data.length === 0) return res.status(204).json({ message: 'No profiles found' });
+        res.status(200).json({ data, totalRec: count });
     } catch (err) {
-        return next(err)
+        return next(err);
     }
 }
 
 const editProfile = async (req, res, next) => {
     try {
-        const data = await user_profiles.find({ email: req.body.email })
-        if (!data.length) {
-            const httpError = new HttpError("No data found", 204)
-            return next(httpError);
-        }
-        // data.profile_img = req.files.map(file => file.path)
-        // let profileToUpdate = data[0]; // Assuming you want to update the first matching profile
-        const jsonString = JSON.stringify(req.body); // Assuming you want to update the first matching profile
-        const profile = nestFields(JSON.parse(jsonString))
-        profileToUpdate = {
-            ...data[0]._doc,
-            ...profile
-        }
-        // Update the profile with new profile_img paths
+        const profile = nestFields(req.body);
+        const { data, error } = await supabase
+            .from('profiles')
+            .update(profile)
+            .eq('email', req.body.email)
+            .select();
 
-        delete profileToUpdate.__v
-        const updatedProfile = await user_profiles.findOneAndUpdate(
-            { email: req.body.email },
-            { $set: profileToUpdate },
-            { new: true } // Return the updated document
-        );
-        res.status(200).json({ data: updatedProfile });
-        res.status(500)
-    }
-    catch (err) {
+        if (error) throw error;
+        res.status(200).json({ data: data[0] });
+    } catch (err) {
         return next(err);
     }
 }
 
 const deleteProfile = async (req, res, next) => {
     try {
-        const data = await user_profiles.deleteOne({ email: req.query.email })
-        if (!data.length) {
-            const httpError = new HttpError("No data found", 401)
-            return next(httpError);
-        }
-        res.status(200).json({ data });
-    }
-    catch (err) {
+        const { error } = await supabase
+            .from('profiles')
+            .delete()
+            .eq('email', req.query.email);
+
+        if (error) throw error;
+        res.status(200).json({ message: 'Profile deleted' });
+    } catch (err) {
         return next(err);
     }
 }
+
 exports.createProfile = createProfile;
 exports.getProfile = getProfile;
 exports.getProfiles = getProfiles;
