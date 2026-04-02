@@ -1,5 +1,6 @@
 const HttpError = require("../models/httpError");
 const supabase = require("../config/supabaseClient");
+const { generateProfileId } = require("../utils");
 
 function nestFields(data) {
     const result = {};
@@ -20,9 +21,13 @@ function nestFields(data) {
 const createProfile = async (req, res, next) => {
     try {
         const profile = nestFields(req.body);
+
+        // Generate unique profile ID
+        const profileId = await generateProfileId();
+
         const { data, error } = await supabase
             .from('profiles')
-            .insert([{ ...profile, id: req.auth.sub, email: req.auth.email }])
+            .insert([{ ...profile, id: req.auth.sub, email: req.auth.email, profile_id: profileId, created_at: new Date() }])
             .select();
 
         if (error) throw error;
@@ -64,7 +69,7 @@ const getProfiles = async (req, res, next) => {
             if (filters.marital_status) {
                 query = query.eq('marital_status', filters.marital_status);
             }
-            
+
             if (filters.limit) query = query.limit(filters.limit);
             if (filters.skip) query = query.range(filters.skip, filters.skip + filters.limit - 1);
         }

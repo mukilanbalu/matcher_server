@@ -57,6 +57,7 @@ const familySchema = new mongoose.Schema({
 const userSchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
+    profile_id: { type: String, unique: true, sparse: true },
     marital_status: { type: String, require: true },
     height: { type: String, required: true },
     weight: { type: String, required: true },
