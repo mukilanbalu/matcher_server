@@ -36,17 +36,24 @@ const getInterests = async (req, res, next) => {
         const { data, error } = await query;
         if (error) throw error;
 
-        const enrichedData = data.filter(i => i.sender_id === user_id || i.receiver_id === user_id).map(i => {
+        const sent = [];
+        const received = [];
+
+        data.forEach(i => {
             const isSender = i.sender_id === user_id;
-            return {
+            const item = {
                 ...i,
                 partner_profile: isSender ? i.partner_profile : i.sender,
-                sender_email: i.sender?.email,
-                receiver_email: i.partner_profile?.email
             };
+            
+            if (isSender) {
+                sent.push(item);
+            } else if (i.receiver_id === user_id) {
+                received.push(item);
+            }
         });
         
-        res.status(200).json({ data: enrichedData });
+        res.status(200).json({ sent, received });
     } catch (err) { next(err); }
 };
 
@@ -55,6 +62,14 @@ const toggleInterest = async (req, res, next) => {
     const sender_id = req.auth.sub;
 
     try {
+        const { data: senderProfile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('id', sender_id)
+            .single();
+
+        if (!senderProfile) return next(new HttpError("You must create your profile before expressing interest.", 403));
+
         const { data: userData } = await supabase
             .from('profiles')
             .select('id')
@@ -66,7 +81,7 @@ const toggleInterest = async (req, res, next) => {
         const { data: existingInterest } = await supabase
             .from('interests')
             .select('*')
-            .eq('sender_id', sender_id)
+            .eq('sender_id', senderProfile.id)
             .eq('receiver_id', userData.id)
             .single();
 

@@ -65,9 +65,17 @@ app.use(
       return next(error);
     }
 
-    // Set the HTTP status code of the response to the error code (or 500 if not provided).
-    // Send a JSON response with the error message (or "Unknown error occurred" if not provided).
-    res.status(error.code || 500).json({ message: error.message || "Unknown error occurred" });
+    let statusCode = error.code || 500;
+    if (typeof statusCode !== 'number' || statusCode < 100 || statusCode > 599) {
+      statusCode = 500;
+      // Special handling for DB errors
+      if (error.code === '23503') {
+        statusCode = 400;
+        error.message = "Foreign Key constraint failed - associated record not found";
+      }
+    }
+    
+    res.status(statusCode).json({ message: error.message || "Unknown error occurred" });
   })
 const startServer = async () => {
   app.listen(PORT, () => {
