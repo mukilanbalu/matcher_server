@@ -1,6 +1,7 @@
 -- Profiles Table
 CREATE TABLE IF NOT EXISTS profiles (
-    id TEXT PRIMARY KEY, -- Auth0 ID
+    id BIGSERIAL PRIMARY KEY,
+    auth_id TEXT UNIQUE NOT NULL, -- auth.uid() or Auth0 ID
     email TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
     gender TEXT NOT NULL,
@@ -13,14 +14,15 @@ CREATE TABLE IF NOT EXISTS profiles (
     family JSONB NOT NULL,
     astro JSONB NOT NULL,
     profile_img TEXT[] DEFAULT '{}',
+    profile_id TEXT UNIQUE NOT NULL,
     created_on TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Interests Table
 CREATE TABLE IF NOT EXISTS interests (
     id BIGSERIAL PRIMARY KEY,
-    sender_id TEXT NOT NULL,
-    receiver_id TEXT NOT NULL,
+    sender_id TEXT NOT NULL, -- auth_id
+    receiver_id TEXT NOT NULL, -- auth_id
     status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'rejected')),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(sender_id, receiver_id)
@@ -37,21 +39,21 @@ USING (true);
 
 CREATE POLICY "Users can insert their own profile" 
 ON profiles FOR INSERT 
-WITH CHECK (auth.uid() = id);
+WITH CHECK (auth.uid()::text = auth_id);
 
 CREATE POLICY "Users can update their own profile" 
 ON profiles FOR UPDATE 
-USING (auth.uid() = id);
+USING (auth.uid()::text = auth_id);
 
 -- Policies for Interests
 CREATE POLICY "Users can view their own interests" 
 ON interests FOR SELECT 
-USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
+USING (auth.uid()::text = sender_id OR auth.uid()::text = receiver_id);
 
 CREATE POLICY "Users can send interests" 
 ON interests FOR INSERT 
-WITH CHECK (auth.uid() = sender_id);
+WITH CHECK (auth.uid()::text = sender_id);
 
 CREATE POLICY "Receiver can update interest status" 
 ON interests FOR UPDATE 
-USING (auth.uid() = receiver_id);
+USING (auth.uid()::text = receiver_id);

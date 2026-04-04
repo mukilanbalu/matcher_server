@@ -30,7 +30,11 @@ async function generateProfileId() {
             .eq('profile_id', profileId)
             .single();
 
-        if (!data && (!error || error.code === 'PGRST116')) {
+        if (error && error.code !== 'PGRST116') {
+            throw new Error(`Supabase query failed during ID generation: ${error.message} (Code: ${error.code})`);
+        }
+
+        if (!data) {
             uniqueId = true;
         }
     }
